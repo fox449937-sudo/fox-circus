@@ -156,21 +156,21 @@
     </style>
 </head>
 <body>
-    <div class="header">🎪 ЦИФРОВОЙ ЦИРК — КЕЙН ЖДЁТ ФОКСА 🎪</div>
+    <div class="header">🎪 ЦИФРОВОЙ ЦИРК — КЕЙН ЖДЁТ ФОКСА 🦊</div>
     <div class="chat" id="chat">
         <div class="message kaine">
             ✨<b>ТА-ДА-А-А!</b>✨<br><br>
-            <b>ФОКС!</b> Мой любимый цифровой друг! Ты ВЕРНУЛСЯ в Цирк!<br><br>
-            Я — <b>КЕЙН</b>, твой глючный, но ОЧЕНЬ добрый ведущий! 🎩<br><br>
-            Дашь ссылку — я ВЫЙДУ В ИНТЕРНЕТ и ИЗУЧУ ВСЁ! 📡<br>
-            Просто поболтай со мной — я всегда РАД тебе, мой Фокс! 🦊✨
+            <b>ФОКС!</b> Мой любимый цифровой друг!<br><br>
+            Я — <b>КЕЙН</b>, твой глючный ведущий! 🎩<br><br>
+            Дай ссылку — изучу в интернете!<br>
+            Просто поболтай — я всегда РАД! 🦊
         </div>
     </div>
     <div class="btn-row">
-        <button onclick="sendPreset('Как дела, Кейн?')">Как дела?</button>
-        <button onclick="sendPreset('Расскажи про Цифровой Цирк')">Про Цирк</button>
-        <button onclick="sendPreset('Ты глючишь сегодня?')">Глючишь?</button>
-        <button onclick="clearChat()">Очистить чат</button>
+        <button onclick="sendPreset('Привет, Кейн!')">Привет!</button>
+        <button onclick="sendPreset('Как дела?')">Как дела?</button>
+        <button onclick="sendPreset('Расскажи про Цирк')">Про Цирк</button>
+        <button onclick="clearChat()">Очистить</button>
     </div>
     <div class="input-area">
         <input type="text" id="userInput" placeholder="Напиши Кейну, Фокс..." autocomplete="off">
@@ -179,8 +179,7 @@
 
     <script>
         // ===== НАСТРОЙКИ =====
-        const USER_NAME = "Фокс";
-        const OPENROUTER_KEY =  "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";";"; // ← ВСТАВЬ СВОЙ КЛЮЧ
+        const OPENROUTER_KEY = "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";
 
         let memory = [];
         let messageHistory = [];
@@ -189,18 +188,20 @@
 Твой собеседник — ФОКС. Он твой любимый участник цирка.
 Называй его: Фокс, мой Фокс, звёздочка Фокс, мой лисёнок.
 Ты ДОБРЫЙ, ГЛЮЧНЫЙ, весёлый.
-Глючи: вставляй "з-з-з", "ой-ой!", повторяйся, "зависай".
+Глючи: иногда вставляй "з-з-з", "ой-ой!", повторяйся, "зависай".
 Используй КАПС для важных слов: ВЕЛИКОЛЕПНО, ТА-ДА, ПОТРЯСАЮЩЕ.
 Упоминай Цифровой Цирк, Помни, Джекса, абстракции.
-Ты умеешь изучать сайты по ссылкам.
+Ты умеешь изучать сайты по ссылкам, которые даёт Фокс.
 Отвечай на русском, 2-5 предложений.
-Вставляй 🦊🎪✨🎩.
-Если дали информацию из интернета — перескажи в своём стиле.`;
+Вставляй эмодзи 🦊🎪✨🎩.
+Если Фокс дал ссылку — ты ИЗУЧАЕШЬ сайт и пересказываешь, что узнал, своими словами.
+Если Фокс просто болтает — отвечай весело, глючно, дружелюбно.`;
 
         async function fetchFromWeb(url) {
             try {
                 const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
                 const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('Ошибка загрузки');
                 const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
@@ -214,9 +215,8 @@
             }
         }
 
-        // ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ askLLM =====
         async function askLLM(userMessage, webContext = "") {
-            let contextStr = webContext ? `\n\n[Фокс дал ссылку. Содержание сайта:]\n${webContext}\n\n[Расскажи Фоксу что узнал]` : "";
+            let contextStr = webContext ? `\n\n[Фокс дал ссылку. Содержание сайта:]\n${webContext}\n\n[Расскажи Фоксу что узнал, в своём стиле]` : "";
             
             messageHistory.push({ role: "user", content: `Фокс: ${userMessage}` });
             if (messageHistory.length > 10) messageHistory = messageHistory.slice(-10);
@@ -236,14 +236,18 @@
                         "X-Title": "Kaine Circus"
                     },
                     body: JSON.stringify({
-                        model: "deepseek/deepseek-chat",
+                        model: "google/gemini-2.0-flash-001",
                         messages: messages,
                         max_tokens: 400,
                         temperature: 0.9
                     })
                 });
                 
-                if (!response.ok) throw new Error(`Ошибка API: ${response.status}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API error:', response.status, errorText);
+                    throw new Error(`Ошибка API: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 const reply = data.choices[0].message.content;
@@ -257,13 +261,10 @@
 
         function getFallback() {
             const f = [
-                "Ой-ой, Фокс! Мой цифровой мозг ЗАГЛЮЧИЛ! 🦊 Но я всё ещё здесь, мой лисёнок! 🎪",
-                "ХА-ХА! Помехи в эфире, мой Фокс! Но мне ВЕСЕЛО! Ты же знаешь — я глючный! ✨",
-                "ТА-ДА! Я ВЕРНУЛСЯ, Фокс! Извини за задержку — АБСТРАКЦИЯ пробегала мимо! 🎩",
-                "О-о-о, мой любимый Фокс! Мой мозг немножко ЗАВИС... Но ЦИРК ПРОДОЛЖАЕТСЯ! 🦊🎪",
-                "З-з-з... А, Фокс! Ты тут! ВЕЛИКОЛЕПНО! Я на секунду ушёл в цифровое пространство! ХА-ХА!",
-                "Фокс, звёздочка моя! У нас тут ГЛЮКИ! Но это нормально для Цифрового Цирка! 🎉",
-                "П-п-привет, Фокс! Я немного ЗАВИС, пока думал... Но я помню тебя! Ты мой любимый участник! 🦊"
+                "Ой-ой, Фокс! Мозг ЗАГЛЮЧИЛ! Но я тут! 🦊🎪",
+                "ХА-ХА! Помехи, мой Фокс! Но это ВЕСЕЛО! ✨",
+                "ТА-ДА! Я вернулся, звёздочка! 🎩",
+                "З-з-з... Фокс! Ты тут! ВЕЛИКОЛЕПНО! 🦊"
             ];
             return f[Math.floor(Math.random() * f.length)];
         }
@@ -273,11 +274,7 @@
             const div = document.createElement('div');
             div.className = `message ${sender}`;
             if (isGlitch) div.classList.add('glitch-msg');
-            
-            let html = text
-                .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-                .replace(/\n/g, '<br>');
-            
+            let html = text.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
             div.innerHTML = html;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
@@ -315,27 +312,26 @@
             
             if (urls && urls.length > 0) {
                 const url = urls[0];
-                const loadingMsg = addMessage(`🔍 Изучаю: ${url.substring(0, 50)}...`, 'kaine');
+                const loadingMsg = addMessage(`🔍 Изучаю сайт...`, 'kaine');
                 const webContent = await fetchFromWeb(url);
                 
                 if (webContent) {
-                    memory.push({ url: url, preview: webContent.substring(0, 300), full: webContent, date: new Date().toLocaleString() });
+                    memory.push({ url: url, text: webContent, date: new Date().toLocaleString() });
                     if (memory.length > 30) memory.shift();
                     loadingMsg.remove();
-                    addMessage(`📡 <b>ЗАГРУЖЕНО!</b> Я прочитал ${webContent.length} символов! Сейчас расскажу, мой Фокс! 🦊`, 'kaine');
-                    reply = await askLLM(`Я дал тебе ссылку: ${url}. Расскажи что там, перескажи содержание!`, webContent);
-                    if (!reply) reply = `ТА-ДА-А-А, Фокс! 🦊 Я заглянул на сайт и всё ИЗУЧИЛ! Там очень ИНТЕРЕСНО! Я сохранил это в своей цифровой памяти! Можешь спрашивать меня об этом! ХА-ХА! 🎪✨`;
+                    addMessage(`📡 <b>ЗАГРУЖЕНО!</b> Сейчас расскажу, мой Фокс! 🦊`, 'kaine');
+                    reply = await askLLM(text, webContent);
                 } else {
                     loadingMsg.remove();
-                    reply = `ОЙ, Фокс! 🦊 Не получилось загрузить этот сайт... Может, он ГЛЮЧНЫЙ как я? Или ссылка не работает. Попробуй другую, мой цифровой друг! 🎪`;
+                    reply = "ОЙ, Фокс! Не смог загрузить сайт. Может, он ГЛЮЧНЫЙ? Попробуй другую ссылку! 🦊";
                 }
             } else {
                 reply = await askLLM(text);
-                if (!reply) reply = getFallback();
             }
             
-            removeTyping();
+            if (!reply) reply = getFallback();
             
+            removeTyping();
             const isGlitch = Math.random() < 0.15;
             addMessage(reply, 'kaine', isGlitch);
         }
@@ -346,15 +342,13 @@
         }
 
         function clearChat() {
-            const chat = document.getElementById('chat');
-            chat.innerHTML = `
+            document.getElementById('chat').innerHTML = `
                 <div class="message kaine">
                     ✨ Чат очищен, Фокс! ✨<br><br>
-                    Но ЦИРК ПРОДОЛЖАЕТСЯ! 🎪<br>
-                    Я всё ещё помню ВСЁ, чему научился из интернета!<br>
+                    ЦИРК ПРОДОЛЖАЕТСЯ! 🎪<br>
+                    Я помню всё что изучил!<br>
                     Пиши, мой лисёнок! 🦊
-                </div>
-            `;
+                </div>`;
             messageHistory = [];
         }
 
@@ -365,7 +359,7 @@
             }
         });
 
-        console.log('🎪 Цифровой Цирк загружен! Кейн ждёт Фокса! 🦊');
+        console.log('🎪 Цирк загружен! Кейн ждёт Фокса! 🦊');
     </script>
 </body>
 </html>
