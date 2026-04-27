@@ -198,21 +198,35 @@
 Если Фокс просто болтает — отвечай весело, глючно, дружелюбно.`;
 
         async function fetchFromWeb(url) {
-            try {
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('Ошибка загрузки');
-                const html = await response.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                doc.querySelectorAll('script, style, nav, footer, header, aside, iframe').forEach(el => el.remove());
-                let text = doc.body.textContent || '';
-                text = text.replace(/\s+/g, ' ').trim();
-                return text.substring(0, 4000);
-            } catch (e) {
-                console.error('Ошибка загрузки:', e);
-                return null;
+            console.log('🔄 Пытаюсь загрузить:', url);
+            const proxyUrls = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`,
+                `https://cors-anywhere.herokuapp.com/${encodeURIComponent(url)}`
+            ];
+
+            for (const proxyUrl of proxyUrls) {
+                try {
+                    console.log('  Пробую прокси:', proxyUrl);
+                    const response = await fetch(proxyUrl);
+                    if (!response.ok) throw new Error(`Статус: ${response.status}`);
+                    const html = await response.text();
+                    console.log('  Успешно! Получено символов:', html.length);
+                    
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    doc.querySelectorAll('script, style, nav, footer, header, aside, iframe').forEach(el => el.remove());
+                    let text = doc.body.textContent || '';
+                    text = text.replace(/\s+/g, ' ').trim();
+                    console.log('  Очищено, символов:', text.length);
+                    
+                    return text.substring(0, 5000);
+                } catch (e) {
+                    console.warn('  Неудача:', e.message);
+                }
             }
+            console.error('❌ Все прокси не сработали');
+            return null;
         }
 
         async function askLLM(userMessage, webContext = "") {
